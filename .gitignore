@@ -1,0 +1,9 @@
+__pycache__/
+node_modules/
+.env
+*.pyc
+*.pkl
+*.onnx
+.DS_Store
+dist/
+build/

@@ -1,0 +1,26 @@
+version: "3.9"
+services:
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "8000:8000"
+    depends_on:
+      - ml-service
+      - llm-service
+
+  ml-service:
+    build: ./ml-service
+    ports:
+      - "8001:8001"
+
+  llm-service:
+    build: ./llm-service
+    ports:
+      - "8002:8002"
+
+  web-app:
+    build: ./web-app
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api-gateway
