@@ -1,9 +1,26 @@
-__pycache__/
+# Node
 node_modules/
-.env
+npm-debug.log
+
+# Python
+__pycache__/
 *.pyc
+*.pyo
+*.pyd
 *.pkl
-*.onnx
-.DS_Store
+
+# Build / dist
 dist/
 build/
+
+# Docker
+*.log
+
+# Datasets & models
+data/
+ml-service/app/models/pcb_resnet18.pt
+ml-service/app/models/*.json
+
+# VSCode / system files
+.vscode/
+.DS_Store
