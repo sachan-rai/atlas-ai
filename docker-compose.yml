@@ -10,6 +10,13 @@ services:
   ml-service:
     build: ./ml-service
     ports: ["8001:8001"]
+    environment:
+      - REDIS_URL=redis://redis:6379
+    depends_on: [redis]
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
 
   llm-service:
     build: ./llm-service

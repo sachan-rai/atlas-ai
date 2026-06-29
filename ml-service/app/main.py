@@ -2,13 +2,20 @@ from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import JSONResponse
 from io import BytesIO
 from PIL import Image
-import time, json, base64
+import time, json, base64, os, hashlib
 import numpy as np
 import cv2
 import torch
 from torchvision import models, transforms
+import redis.asyncio as aioredis
 
 app = FastAPI(title="ML Service")
+
+# ---- Redis cache (keyed by image-content hash) ----
+# Dedupes repeat inspections of the same board image so we skip the model on
+# hits. Cache failures are non-fatal: the service still works without Redis.
+CACHE_TTL = 3600
+redis_client = aioredis.from_url(os.getenv("REDIS_URL", "redis://redis:6379"))
 
 # ---- Load model/classes ----
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -78,6 +85,16 @@ def health():
 @app.post("/infer")
 async def infer(file: UploadFile = File(...)):
     content = await file.read()
+
+    # Cache lookup by image-content hash.
+    cache_key = "infer:" + hashlib.sha256(content).hexdigest()
+    try:
+        cached = await redis_client.get(cache_key)
+    except Exception:
+        cached = None
+    if cached:
+        return JSONResponse({**json.loads(cached), "cache_hit": True})
+
     img = Image.open(BytesIO(content)).convert("RGB")
 
     # Original image (downscaled) used for the heatmap overlay.
@@ -100,11 +117,19 @@ async def infer(file: UploadFile = File(...)):
     # Weakly-supervised localization (separate from the classification latency).
     box, overlay_b64 = gradcam_and_box(x, class_idx, orig)
 
-    return JSONResponse({
+    result = {
         "class": class_names[class_idx],
         "confidence": float(conf.detach()),
         "latency_ms": latency_ms,
         "model_version": "pcb_resnet18",
         "box": box,                       # normalized [x1,y1,x2,y2] or null
         "overlay_png_b64": overlay_b64,
-    })
+    }
+
+    # Cache the full result (overlay included) for repeat uploads.
+    try:
+        await redis_client.set(cache_key, json.dumps(result), ex=CACHE_TTL)
+    except Exception:
+        pass
+
+    return JSONResponse({**result, "cache_hit": False})
