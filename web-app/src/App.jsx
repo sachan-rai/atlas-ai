@@ -235,6 +235,23 @@ export default function App() {
                 {result?.ml?.cache_hit && (
                   <div style={{ marginTop: 4, fontSize: 12, opacity: 0.7 }}>⚡ cache hit</div>
                 )}
+                {result?.ml?.overlay_png_b64 && (
+                  <div style={{ marginTop: 12 }}>
+                    <div style={{ fontSize: 13, opacity: 0.8, marginBottom: 6 }}>
+                      Grad-CAM localization (weakly-supervised)
+                    </div>
+                    <img
+                      src={`data:image/png;base64,${result.ml.overlay_png_b64}`}
+                      alt="grad-cam overlay"
+                      style={{ maxWidth: "100%", borderRadius: 10, border: "1px solid #303236" }}
+                    />
+                    <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>
+                      {result.ml.box
+                        ? `Box (normalized): [${result.ml.box.map((v) => v.toFixed(3)).join(", ")}]`
+                        : "No region above activation threshold."}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div style={{ opacity: 0.8 }}>No result yet.</div>
