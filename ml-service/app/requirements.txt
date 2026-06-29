@@ -3,3 +3,6 @@ uvicorn
 pillow
 torch
 torchvision
+opencv-python-headless
+numpy
+redis
